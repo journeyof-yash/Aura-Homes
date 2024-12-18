@@ -31,13 +31,12 @@ public class JwtTokenProvider {
     private long jwtExpiration;
 
     public String generateToken(Authentication authentication) {
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
+        String username = authentication.getName();
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
+                .setSubject(username)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
@@ -46,25 +45,20 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                    .setSigningKey(jwtSecret)
-                    .parseClaimsJws(token);
+            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
             return true;
-        } catch (ExpiredJwtException |
-                 UnsupportedJwtException |
-                 MalformedJwtException |
-                 SignatureException |
-                 IllegalArgumentException ex) {
-            // Log the exception details
+        } catch (JwtException | IllegalArgumentException ex) {
             return false;
         }
     }
 
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
+        return Jwts.parser()
                 .setSigningKey(jwtSecret)
                 .parseClaimsJws(token)
-                .getBody();
-        return claims.getSubject();
+                .getBody()
+                .getSubject();
     }
+
+
 }

@@ -20,21 +20,26 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
+    // Login endpoint
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequestDto loginRequest) {
-        String token = authService.login(loginRequest);
+        String token = authService.login(loginRequest.getUsername(), loginRequest.getPassword());
+
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
+
         return ResponseEntity.ok(response);
     }
 
+    // Register endpoint
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody Map<String, String> request) {
         String username = request.get("username");
         String password = request.get("password");
-        String role = request.get("role"); // Optional
+        String role = request.get("role"); // Optional field
 
         String response = authService.register(username, password, role);
+
         return ResponseEntity.ok(response);
     }
 

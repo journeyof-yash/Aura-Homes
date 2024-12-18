@@ -22,7 +22,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
-    private CustomUserDetailsService customUserDetailsService;
+    private UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -30,30 +30,20 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        try {
-            String token = extractTokenFromRequest(request);
+        String token = extractTokenFromRequest(request);
 
-            if (token != null && jwtTokenProvider.validateToken(token)) {
-                String username = jwtTokenProvider.getUsernameFromToken(token);
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            String username = jwtTokenProvider.getUsernameFromToken(token);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-        } catch (Exception e) {
-            // Log the error
-            logger.error("Cannot set user authentication", e);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);
