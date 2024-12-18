@@ -29,6 +29,12 @@ public class AuthService {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public String login(LoginRequestDto loginRequest) {
         try {
             // Authenticate the user
@@ -47,5 +53,23 @@ public class AuthService {
         } catch (BadCredentialsException e) {
             throw new RuntimeException("Invalid username or password", e);
         }
+    }
+
+    public String register(String username, String password, String role) {
+        // Check if the user already exists
+        if (userRepository.findByUsername(username) != null) {
+            throw new RuntimeException("User already exists");
+        }
+
+        // Create a new user
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(password)); // Encode the password
+        user.setRole(role);
+
+        // Save the user in the database
+        userRepository.save(user);
+
+        return "User registered successfully!";
     }
 }
